@@ -14,6 +14,16 @@ module Type = struct
     | String
     | Tuple of t list
 
+  let rec to_core_type loc t =
+    let constr x = ptyp_constr ~loc {txt= lident x; loc} [] in
+    match t with
+    | Var v   -> ptyp_var ~loc v
+    | Bool    -> constr "bool"
+    | Int     -> constr "int"
+    | Char    -> constr "char"
+    | String  -> constr "string"
+    | Tuple l -> ptyp_tuple ~loc (List.map l ~f:(to_core_type loc))
+
   let rec to_string = function
     | Var v   -> "'" ^ v
     | Bool    -> "bool"
@@ -35,6 +45,12 @@ module Value = struct
   let ocaml_version =
     Caml.Scanf.sscanf Caml.Sys.ocaml_version "%d.%d.%d"
       (fun major minor patchlevel -> Tuple [Int major; Int minor; Int patchlevel])
+  ;;
+
+  let lift_string loc t =
+    match t with
+    | String str -> str
+    | _          -> Location.raise_errorf ~loc "optcomp: got unexpected value where string was expected"
   ;;
 
   let rec to_expression loc t =

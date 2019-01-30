@@ -4,7 +4,7 @@ open Ppxlib
 module Directive = struct
   type t = If | Else | Elif | Endif | Ifdef | Ifndef |
            Define | Undef |
-           Error | Warning | Import |
+           Error | Warning | Import | Inject |
            (* deprecated, but provide useful warnings *)
            Elifdef | Elifndef
 
@@ -27,6 +27,7 @@ module Directive = struct
     | "optcomp.error"    | "error"    -> Some Error
     | "optcomp.warning"  | "warning"  -> Some Warning
     | "optcomp.import"   | "import"   -> Some Import
+    | "optcomp.inject"   | "inject"   -> Some Inject
     | "optcomp.elifdef"  | "elifdef"  -> Some Elifdef
     | "optcomp.elifndef" | "elifndef" -> Some Elifndef
     | _ -> None

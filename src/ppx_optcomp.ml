@@ -48,6 +48,15 @@ module Ast_utils = struct
       Location.raise_errorf ~loc
         "optcomp: invalid directive syntax, expected single expression."
 
+  let get_expr_pair ~loc payload =
+    match payload with
+    | PStr [{ pstr_desc = Pstr_eval ({ pexp_desc = Pexp_tuple [one;two]; _ }, attrs); _ }] ->
+        assert_no_attributes attrs;
+        one, two
+    | _ ->
+      Location.raise_errorf ~loc
+        "optcomp: invalid directive syntax, expected pair expression (tuple with 2 elements)."
+
   let assert_no_arguments ~loc payload =
     match payload with
     | PStr [] -> ()
@@ -112,8 +121,7 @@ end = struct
     in
     (fpath, ftype)
 
-  let import_open ~loc payload =
-    let filename = Ast_utils.get_string ~loc payload in
+  let import_open ~loc ~filename =
     let fpath, ftype = resolve_import ~loc ~filename in
     let in_ch =
       try In_channel.create fpath
@@ -150,7 +158,8 @@ end = struct
            let last_block, rest = unroll acc in
            begin match dir with
            | Import ->
-             let in_ch, lexbuf, ftype = import_open ~loc payload in
+             let filename = Ast_utils.get_string ~loc payload in
+             let in_ch, lexbuf, ftype = import_open ~loc ~filename in
              let new_tokens =
                match ftype with
                | C -> Cparser.parse_loop lexbuf
@@ -171,6 +180,29 @@ end = struct
      List.rev tokens_rev
 end
 
+module Binding = struct
+  open Interpreter
+
+  type t =
+    { ident: string
+    ; value: Value.t
+    ; loc: location }
+
+  let to_pstr {ident; value; loc} =
+    let type_ = Type.to_core_type loc (Value.type_ value) in
+    let expr = Value.to_expression loc value in
+    let binding =
+      value_binding ~loc
+        ~pat:(ppat_constraint ~loc (ppat_var ~loc {txt=ident; loc}) (ptyp_poly ~loc [] type_))
+        ~expr:(pexp_constraint ~loc expr type_)
+    in
+    pstr_value ~loc Nonrecursive [binding]
+
+  let to_psig {ident; value; loc} =
+    let type_ = Type.to_core_type loc (Value.type_ value) in
+    psig_value ~loc (value_description ~loc ~name:{txt=ident; loc} ~type_ ~prim:[])
+end
+
 module Meta_ast : sig
   type 'a t
 
@@ -178,6 +210,7 @@ module Meta_ast : sig
   val eval
     :  drop_item:('a -> unit)
     -> eval_item:(Env.t -> 'a -> 'a)
+    -> inject_binding:(Env.t -> Binding.t -> 'a)
     -> env:Env.t
     -> 'a t
     -> Env.t * 'a list
@@ -202,6 +235,7 @@ end = struct
     | Import of string Location.loc
     | Error of string Location.loc
     | Warning of string Location.loc
+    | Inject of { ident_expr: expression; value_expr: expression; loc: location }
 
   type 'a partial_if =
     | EmptyIf of ('a t -> 'a t -> 'a t) (* [If] waiting for both blocks *)
@@ -265,7 +299,6 @@ end = struct
             | PartialIf _ ->
               Location.raise_errorf ~loc "optcomp: second else clause."
             end
-
           | Define ->
             let ident, expr = get_var_expr ~loc payload in
             Full (Define (ident, expr)) :: acc
@@ -273,6 +306,9 @@ end = struct
           | Error -> Full (Error { txt = (get_string ~loc payload); loc }) :: acc
           | Warning -> Full (Warning { txt = (get_string ~loc payload); loc }) :: acc
           | Import -> Full (Import { txt = (get_string ~loc payload); loc }) :: acc
+          | Inject ->
+            let ident_expr, value_expr = get_expr_pair ~loc payload in
+            Full (Inject {ident_expr; value_expr; loc}) :: acc
           | Ifdef ->
             let ident = pexp_ident ~loc (get_ident ~loc payload) in
             let expr = make_apply_fun ~loc "defined" ident in
@@ -291,7 +327,7 @@ end = struct
     in
     Block (List.rev_map pre_parsed ~f:extract_full)
 
-  let eval ~drop_item ~eval_item ~env ast =
+  let eval ~drop_item ~eval_item ~inject_binding ~env ast =
     let rec drop ast = match ast with
       | Leaf l -> List.iter l ~f:drop_item
       | Block (ast::asts) -> drop ast; drop (Block asts)
@@ -318,6 +354,11 @@ end = struct
       | Undefine ident -> Env.undefine env ident, []
       | Import { loc; _ } ->
         Location.raise_errorf ~loc "optcomp: import not supported in this context."
+      | Inject { ident_expr; value_expr; loc } ->
+        let open Binding in
+        let ident = Interpreter.Value.lift_string loc (Interpreter.eval env ident_expr) in
+        let value = Interpreter.eval env value_expr in
+        env, [[inject_binding env {ident; value; loc}]]
       | If (cond, ast1, ast2) ->
         let cond =
           (* Explicitely allow the following pattern:
@@ -372,10 +413,10 @@ end = struct
 
 end
 
-let rewrite ~drop_item ~eval_item ~of_item ~env (x : 'a list) : Env.t * 'a list =
+let rewrite ~drop_item ~eval_item ~inject_binding ~of_item ~env (x : 'a list) : Env.t * 'a list =
   let tokens : ('a Token.t list) = Token_stream.of_items x ~of_item in
   let ast = Meta_ast.of_tokens tokens in
-  Meta_ast.eval ~drop_item ~eval_item ~env ast
+  Meta_ast.eval ~drop_item ~eval_item ~inject_binding ~env ast
 ;;
 
 let map =
@@ -383,14 +424,18 @@ let map =
     inherit [Env.t] Ast_traverse.map_with_context as super
 
     method structure_gen env x =
-      rewrite x ~env ~drop_item:Attribute.explicitly_drop#structure_item
+      rewrite x ~env
+        ~drop_item:Attribute.explicitly_drop#structure_item
         ~eval_item:self#structure_item
         ~of_item:Of_item.structure
+        ~inject_binding:(fun env b -> self#structure_item env (Binding.to_pstr b))
 
     method signature_gen env x =
-      rewrite x ~env ~drop_item:Attribute.explicitly_drop#signature_item
+      rewrite x ~env
+        ~drop_item:Attribute.explicitly_drop#signature_item
         ~eval_item:self#signature_item
         ~of_item:Of_item.signature
+        ~inject_binding:(fun env b -> self#signature_item env (Binding.to_psig b))
 
     method! structure env x =
       snd (self#structure_gen env x)
@@ -400,9 +445,13 @@ let map =
 
     method! class_structure env x =
       let _, rewritten =
-        rewrite x.pcstr_fields ~env ~drop_item:Attribute.explicitly_drop#class_field
+        rewrite x.pcstr_fields ~env
+          ~drop_item:Attribute.explicitly_drop#class_field
           ~eval_item:self#class_field
           ~of_item:Of_item.class_structure
+          ~inject_binding:(fun _env b ->
+              Location.raise_errorf ~loc:Binding.(b.loc) "optcomp: class structure injection is unsupported")
+          (* ~inject_binding:(fun env b -> self#class_field env (Binding.to_pcf b)) *)
       in
       { x with pcstr_fields = rewritten }
 
@@ -412,6 +461,9 @@ let map =
           ~drop_item:Attribute.explicitly_drop#class_type_field
           ~eval_item:self#class_type_field
           ~of_item:Of_item.class_signature
+          ~inject_binding:(fun _env b ->
+              Location.raise_errorf ~loc:Binding.(b.loc) "optcomp: class signature injection is unsupported")
+          (* ~inject_binding:(fun env b -> self#class_type_field env (Binding.to_pctf b)) *)
       in
       { x with pcsig_fields = rewritten }
 

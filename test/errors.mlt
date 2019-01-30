@@ -50,3 +50,19 @@ end
 Line _, characters 4-10:
 Error: optcomp: cannot open imported file: ./non_existent_file.h: ./non_existent_file.h: No such file or directory
 |}]
+
+module Test_injection_invalid_ident_type = struct
+[%%inject 45, 0]
+end
+[%%expect{|
+Line _, characters: 10-13:
+Error: optcomp: invalid identifier specified for injection: value is not a string
+|}]
+
+module Test_injection_invalid_ident_format = struct
+[%%inject "45", 0]
+end
+[%%expect{|
+Line _, characters: 10-15:
+Error: optcomp: invalid identifier specified for injection: "45" is not a valid ocaml identifier
+|}]
