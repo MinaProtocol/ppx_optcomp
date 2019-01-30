@@ -1,3 +1,30 @@
-(library (name ppx_optcomp_test)
- (inline_tests)
- (preprocess (pps ppx_optcomp ppx_inline_test ppx_expect)))
+(* -*- tuareg -*- *)
+
+let rec find_all_files dirname basename =
+  let fullname = Filename.concat dirname basename in
+  if Sys.is_directory fullname then
+    Sys.readdir fullname
+    |> Array.to_list
+    |> List.map (find_all_files fullname)
+    |> List.concat
+  else
+    [fullname]
+
+let () =
+  let import_relativity_deps =
+    find_all_files "" "import_relativity"
+    |> String.concat " "
+  in
+  Jbuild_plugin.V1.send @@ "
+    (copy_files import_relativity/**.mlh)
+
+    (rule
+     (targets ghost)
+     (mode fallback)
+     (deps "^import_relativity_deps^")
+     (action (bash \"touch ghost\")))
+
+    (library (name ppx_optcomp_test)
+     (inline_tests)
+     (preprocessor_deps ghost)
+     (preprocess (pps ppx_optcomp ppx_inline_test ppx_expect)))"
