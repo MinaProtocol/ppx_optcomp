@@ -105,7 +105,7 @@ end = struct
 
   type ftype = Ocaml | C
 
-  let resolve_import ~loc ~filename : string * ftype =
+  let resolve_import ~loc ~absolute ~filename : string * ftype =
     let ext = Filename.extension (Filename.basename filename) in
     let ftype = match ext with
       | ".ml" | ".mlh" -> Ocaml
@@ -113,16 +113,20 @@ end = struct
       | _ -> Location.raise_errorf ~loc "optcomp: unknown file extension: %s\n\
                                          Must be one of: .ml, .mlh or .h." ext
     in
-    let fbase = Filename.dirname loc.loc_start.pos_fname in
     let fpath =
-      if Filename.is_relative filename
-      then Filename.concat fbase filename
-      else filename
+      if not (Filename.is_relative filename) && absolute then
+        filename
+      else if Filename.is_relative filename then
+        let fbase = Filename.dirname loc.loc_start.pos_fname in
+        Filename.concat fbase filename
+      else
+        let cwd = Stdlib.Sys.getcwd () in
+        Filename.concat cwd filename
     in
     (fpath, ftype)
 
-  let import_open ~loc ~filename =
-    let fpath, ftype = resolve_import ~loc ~filename in
+  let import_open ~loc ~absolute ~filename =
+    let fpath, ftype = resolve_import ~loc ~absolute ~filename in
     let in_ch =
       try In_channel.create fpath
       with exn ->
@@ -156,10 +160,9 @@ end = struct
          match of_item item with
          | Directive (dir, loc, payload) as token ->
            let last_block, rest = unroll acc in
-           begin match dir with
-           | Import ->
+           let import ~absolute =
              let filename = Ast_utils.get_string ~loc payload in
-             let in_ch, lexbuf, ftype = import_open ~loc ~filename in
+             let in_ch, lexbuf, ftype = import_open ~loc ~absolute ~filename in
              let new_tokens =
                match ftype with
                | C -> Cparser.parse_loop lexbuf
@@ -169,6 +172,10 @@ end = struct
              in
              In_channel.close in_ch;
              List.rev new_tokens @ (last_block :: rest)
+           in
+           begin match dir with
+           | Import -> import ~absolute:false
+           | Import_absolute -> import ~absolute:true
            | _ -> token :: last_block :: rest
            end
          | _ -> begin match acc with
@@ -233,6 +240,7 @@ end = struct
     | Define of string Location.loc * expression option
     | Undefine of string Location.loc
     | Import of string Location.loc
+    | Import_absolute of string Location.loc
     | Error of string Location.loc
     | Warning of string Location.loc
     | Inject of { ident_expr: expression; value_expr: expression; loc: location }
@@ -306,6 +314,7 @@ end = struct
           | Error -> Full (Error { txt = (get_string ~loc payload); loc }) :: acc
           | Warning -> Full (Warning { txt = (get_string ~loc payload); loc }) :: acc
           | Import -> Full (Import { txt = (get_string ~loc payload); loc }) :: acc
+          | Import_absolute -> Full (Import_absolute { txt = (get_string ~loc payload); loc }) :: acc
           | Inject ->
             let ident_expr, value_expr = get_expr_pair ~loc payload in
             Full (Inject {ident_expr; value_expr; loc}) :: acc
@@ -352,7 +361,8 @@ end = struct
         Env.add env ~var:ident ~value:(Interpreter.eval env expr), []
       | Define (ident, None) -> Env.add env ~var:ident ~value:(Value.Tuple []), []
       | Undefine ident -> Env.undefine env ident, []
-      | Import { loc; _ } ->
+      | Import { loc; _ }
+      | Import_absolute { loc; _ } ->
         Location.raise_errorf ~loc "optcomp: import not supported in this context."
       | Inject { ident_expr; value_expr; loc } ->
         let open Binding in
