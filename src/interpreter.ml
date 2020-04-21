@@ -47,6 +47,16 @@ module Value = struct
       (fun major minor patchlevel -> Tuple [Int major; Int minor; Int patchlevel])
   ;;
 
+  let ocaml_backend =
+    let be =
+      match Sys.backend_type with
+      | Native -> "native"
+      | Bytecode -> "bytecode"
+      | Other s -> s (* js_of_ocaml, for instance *)
+    in
+    String be
+  ;;
+
   let lift_string loc t =
     match t with
     | String str -> str
@@ -174,7 +184,12 @@ end = struct
         ; txt = "ocaml_version"
         },
         Value.ocaml_version
+      ; { loc = Location.none
+        ; txt = "ocaml_backend"
+        },
+        Value.ocaml_backend
       ]
+  ;;
 
   let short_loc_string (loc : Location.t) =
     Printf.sprintf "%s:%d" loc.loc_start.pos_fname loc.loc_start.pos_lnum
