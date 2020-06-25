@@ -120,8 +120,23 @@ end = struct
         let fbase = Filename.dirname loc.loc_start.pos_fname in
         Filename.concat fbase filename
       else
+        (* Hacky hack: The current working directory set by merlin is the
+           directory of the file, which may differ from dune's. Walk outwards
+           until a candidate file is found.
+        *)
+        let rec find_file base_path filename =
+          let test_filename = Filename.concat base_path filename in
+          try
+            In_channel.close (In_channel.create test_filename) ; test_filename
+          with _ as err ->
+            let base_path_ancestor = Filename.dirname base_path in
+            if String.equal base_path_ancestor base_path then
+              raise err
+            else
+              find_file (Filename.dirname base_path) filename
+        in
         let cwd = Stdlib.Sys.getcwd () in
-        Filename.concat cwd filename
+        find_file cwd filename
     in
     (fpath, ftype)
 
