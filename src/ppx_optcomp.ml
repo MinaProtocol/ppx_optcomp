@@ -128,10 +128,15 @@ end = struct
           let test_filename = Filename.concat base_path filename in
           try
             In_channel.close (In_channel.create test_filename) ; test_filename
-          with _ as err ->
+          with _ as exn ->
             let base_path_ancestor = Filename.dirname base_path in
             if String.equal base_path_ancestor base_path then
-              raise err
+              let msg = match exn with
+                | Sys_error msg -> msg
+                | _ -> Exn.to_string exn
+              in
+              Location.raise_errorf ~loc
+                "optcomp: cannot open imported file: %s: %s" filename msg
             else
               find_file (Filename.dirname base_path) filename
         in
