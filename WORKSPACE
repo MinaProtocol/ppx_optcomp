@@ -1,7 +1,7 @@
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository") # , "new_git_repository")
 
 git_repository(
-    name = "obazl",
+    name = "obazl_rules_ocaml",
     remote = "https://github.com/mobileink/obazl",
     branch = "master",
     # commit = "feef897197b36b14b65ffdf00b9badcbdb8f42f4",
