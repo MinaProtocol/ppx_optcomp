@@ -1,6 +1,7 @@
 .bazel
-bazel-out
+bazel-*
 user.bazelrc
+
 _build
 setup.data
 setup.log
