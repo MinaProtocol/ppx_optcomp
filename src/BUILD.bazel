@@ -1,21 +1,19 @@
 ## BUILD.bazel for /Users/gar/coda/gitfork/src/external/ppx_optcomp/src/dune
 load(
-    "@obazl_rules_ocaml//ocaml:build.bzl",
+    "@obazl_rules_ocaml//ocaml:rules.bzl",
     "ocaml_archive",
     "ocaml_interface",
     "ocaml_module",
     "ocaml_ns_module",
     "ppx_archive",
-    "ppx_module",
-    "ppx_ns_module",
 )
 
 INTF_OPTS = [
-    "-verbose"
+    # "-verbose"
 ]
 
 IMPL_OPTS = [
-    "-verbose"
+    # "-verbose"
 ]
 
 ## ppx library: ppx_optcomp
@@ -56,7 +54,7 @@ ocaml_ns_module(
 
 ocaml_module(
     name = "cparser.cm_",
-    impl = "cparser.ml",
+    src = "cparser.ml",
     opts = IMPL_OPTS,
     ns_module = ":ppx_optcomp_ns_module",
     visibility = ["//visibility:public"],
@@ -72,7 +70,7 @@ ocaml_module(
 
 ocaml_module(
     name = "interpreter.cm_",
-    impl = "interpreter.ml",
+    src = "interpreter.ml",
     opts = IMPL_OPTS,
     ns_module = ":ppx_optcomp_ns_module",
     visibility = ["//visibility:public"],
@@ -87,7 +85,7 @@ ocaml_module(
 
 ocaml_module(
     name = "token.cm_",
-    impl = "token.ml",
+    src = "token.ml",
     opts = IMPL_OPTS,
     ns_module = ":ppx_optcomp_ns_module",
     visibility = ["//visibility:public"],
@@ -102,7 +100,7 @@ ocaml_module(
 
 ocaml_module(
     name = "ppx_optcomp.cm_",
-    impl = "ppx_optcomp.ml",
+    src = "ppx_optcomp.ml",
     opts = IMPL_OPTS,
     ns_module = ":ppx_optcomp_ns_module",
     visibility = ["//visibility:public"],
