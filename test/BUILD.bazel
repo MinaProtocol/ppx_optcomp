@@ -1,208 +1,59 @@
-load("@obazl_rules_ocaml//ocaml:build.bzl",
-     "ocaml_module",
+load("@obazl_rules_ocaml//ocaml:rules.bzl",
      "ppx_executable",
-     "ppx_library",
-     "ppx_module",
-     "ppx_ns_module",
-     "ppx_archive")
+     "ppx_test"
+)
 
-# To test we just use the PPX in a ppx executable to transform a source file.
-# If the transform goes through, the test succeeded.
-
-# To use the binary some args must be passed. We pass them to the
-# ppx_executable rule, which will propagate them to users of the binary.
-PPX_ARGS = [
-    "--cookie", "library-name=\"ppx_optcomp_test\""
-] # , "-dump-ast"]
-
-## make a standalone executable
-ppx_executable(
-    name = "ppx_optcomp.exe",
-    srcs = [
-        # do not sort (buildifier)
-        "@obazl//ppxlib:driver_standalone_shim",
-    ],
-    args = PPX_ARGS,
-    opts = [
-        "-verbose",
-        "-linkpkg",
-        "-linkall",
-        # "-inline-test-lib",
-        "-predicates",
-        "ppx_driver",
-    ],
-    build_deps = [
-        "@opam//pkg:ppxlib",
-        "//src:ppx_optcomp",
-        "@opam//pkg:ppx_inline_test",
-        "@opam//pkg:ppx_expect",
+################################################################
+test_suite(
+    name     = "test",
+    tests    = [
+        ":import_relativity_test",
+        ":injection"
     ]
 )
 
-TEST_NS = "ppx_optcomp_test__"
-
-# ppx_ns_module(
-#     name = "test_ns_module",
-#     module_name = "ppx_optcomp_test__",
-#     ns  =  TEST_NS,
-#     submodules = ["import_relativity.ml", "injection.ml"]
-# )
-
-# Next, preprocess and compile each test submodule source file.  For
-# the preprocessing action we need to pass some args to make
-# ppx_inline_test happy; we get them from the ppx target, which we
-# parameterized with 'args', above.
-ocaml_module(
-    name = "import_relativity.cm_",
-    impl = "import_relativity.ml",
-    opts = ["-verbose", "-linkall",
-            "-predicates", "ppx_driver",
-    ],
-    # ns   = TEST_NS,
-    ppx_exe  = ":ppx_optcomp.exe",
-    ppx_output_format = "text",
-    ppx_args = PPX_ARGS,
-    ppx_deps = [
-        "errors.mlt",
-        "examples.mlt",
+################################################################
+ppx_test(
+    name     = "import_relativity_test",
+    src      = "import_relativity.ml",
+    ppx      = ":ppx",
+    expect   = {"expect/import_relativity.ml": "stdout",
+                  "expect/import_relativity.stderr": "stderr"},
+    data     = [
         "import_relativity/entry.mlh",
         "import_relativity/exit.mlh",
         "import_relativity/nested/a.mlh",
         "import_relativity/nested/b.mlh",
-        "test_imported/config.h",
-        "test_imported/error/a.ml",
-        "test_imported/error/b.ml",
-        "test_imported/error/c.ml",
-        "test_imported/order/c.ml",
-        "test_imported/order/cd.ml",
-        "test_imported/order/d.ml",
     ],
-    deps = [
+    timeout  = "short",
+)
+
+ppx_test(
+    name     = "injection",
+    src      = "injection.ml",
+    expect   = {"expect/injection.ml": "stdout"},
+    ppx      = ":ppx",
+    args     = [
+        # do not sort (buildifier)
+        "-inline-test-lib",
+        "ppx_optcomp"
+    ],
+     timeout = "short",
+)
+
+################################################################
+ppx_executable(
+    name     = "ppx",
+    srcs     = ["@obazl//ppxlib:driver_standalone_shim"],
+    opts     = [
+        "-linkall",
+        "-predicates",
+        "ppx_driver",
+    ],
+    deps     = [
+        "@opam//pkg:ppxlib",
         "@opam//pkg:ppx_inline_test",
-        "@opam//pkg:ppx_expect.collector",
+        "@opam//pkg:ppx_expect",
+        "//src:ppx_optcomp",
     ]
 )
-
-ocaml_module(
-    name = "injection.cm_",
-    impl = "injection.ml",
-    opts = ["-verbose", "-linkall",
-            "-predicates", "ppx_driver",
-    ],
-    # ns   = TEST_NS,
-    ppx_exe = ":ppx_optcomp.exe",
-    ppx_output_format = "text",
-    ppx_args = [
-        "-inline-test-lib", "foo"
-    ],
-    deps = [
-        # ":test_ns_module",
-        "@opam//pkg:ppx_expect.collector",
-    ]
-)
-
-# ppx_module(
-#     name = "import_relativity.cm_",
-#     impl = "import_relativity.ml",
-#     opts = ["-verbose", "-linkall",
-#             "-predicates", "ppx_driver",
-#     ],
-#     ns   = TEST_NS,
-#     ppx_exe  = ":ppx_optcomp.exe",
-#     ppx_deps = [
-#         "import_relativity/entry.mlh",
-#         "import_relativity/exit.mlh",
-#         "import_relativity/nested/a.mlh",
-#         "import_relativity/nested/b.mlh"
-#     ],
-#     deps = [
-#         ":test_ns_module",
-#         "@opam//pkg:ppx_expect.collector",
-#     ]
-# )
-
-# ppx_module(
-#     name = "injection.cm_",
-#     impl = "injection.ml",
-#     opts = ["-verbose", "-linkall",
-#             "-predicates", "ppx_driver",
-#     ],
-#     ns   = TEST_NS,
-#     ppx_exe = ":ppx_optcomp.exe",
-#     deps = [
-#         ":test_ns_module",
-#         "@opam//pkg:ppx_expect.collector",
-#     ]
-# )
-
-## Now we build a library and an archive of the test ns module and submodules.
-
-# TEST_SUBMODULE_DEPS = [
-#     ":test_ns_module",
-#     ":import_relativity_cm",
-#     ":injection_cm",
-#     "@opam//pkg:ppx_inline_test",
-#     "@opam//pkg:ppx_expect",
-# ]
-
-# ppx_library(
-#     name = "ppx_optcomp_test_lib",
-#     visibility = ["//visibility:public"],
-#     msg = "Compiling...",
-#     opts = ["-verbose"],
-#     deps = TEST_SUBMODULE_DEPS
-# )
-
-# ppx_archive(
-#     name = "ppx_optcomp_test_archive",
-#     archive_name = "ppx_optcomp_test",
-#     visibility = ["//visibility:public"],
-#     msg = "Compiling ppx_optcomp_test_cmxa...",
-#     opts = [
-#         "-linkall",
-#         "-verbose"
-#     ],
-#     deps = TEST_SUBMODULE_DEPS
-# )
-
-
-# # build the test runner executable, linking against the test archive.
-# ppx_executable(
-#     name = "ppx_optcomp_test_runner.exe",
-#     # srcs = ["@opam//ppx:inline_test_finalizer"],
-#     opts = ["-w", "-24",
-#             "-g",
-#             "-nodynlink",
-#             "-no-alias-deps",
-#             # "-c",
-#             "-linkall",
-#             "-linkpkg",
-#             "-predicates", "ppx_driver",
-#             # "-predicates", "ppx_deriving",
-#              "-verbose",
-#     ],
-#     build_deps = [
-#         ## (preprocess (pps ppx_optcomp ppx_inline_test ppx_expect))
-#         "@opam//pkg:ppxlib",
-#         # dune secretly injects the following, which
-#         # injects ppx_inline_test/runner/lib etc.
-#         # "@opam//pkg:ppx_inline_test",
-#         # ##NB: in opam, the following package contains let () = Ppx_inline_test_lib.Runtime.exit ()
-#         # ## but only compiled as a .cmxs, so it does us no good
-#         # ## let's try this:
-#         # "@opam//pkg:ppx_inline_test.runtime-lib",
-#         # "@opam//pkg:ppx_expect",
-#         # "@opam//pkg:ppx_expect.collector",
-#         # this is our implementation of the finalizer shim:
-#         # "@opam//ppxlib:driver_standalone_runner",
-#         # ":import_relativity_cm",
-#         # ":injection_cm",
-#         # ":test_ns_module",
-#         ":ppx_optcomp_test_archive",
-#         "@opam//pkg:ppx_inline_test.runner",
-#     ]
-# )
-
-# finally run the test. note the '--' to distinguish between bazel args and pgm args.
-
-# bazel/bin/ppx_optcomp_test_runner.exe -- inline-test-runner ppx_optcomp_test -source-tree-root . -verbose -show-counts

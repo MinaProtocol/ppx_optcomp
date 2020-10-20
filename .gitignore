@@ -1,6 +1,7 @@
 .bazel
 bazel-*
 user.bazelrc
+.cpcache
 
 _build
 setup.data

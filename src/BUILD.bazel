@@ -1,118 +1,105 @@
-## BUILD.bazel for /Users/gar/coda/gitfork/src/external/ppx_optcomp/src/dune
 load(
     "@obazl_rules_ocaml//ocaml:rules.bzl",
     "ocaml_archive",
-    "ocaml_interface",
     "ocaml_module",
     "ocaml_ns_module",
     "ppx_archive",
+    "ppx_executable",
+    "ppx_module",
 )
 
-INTF_OPTS = [
-    # "-verbose"
+## Global Options
+load(
+    "//bzl:config.bzl",
+    "ARCHIVE_OPTS",
+    "GLOBAL_CLI_OPTS",
+    "MODULE_OPTS",
+    "NS_MODULE_OPTS",
+    "PPX_ARCHIVE_OPTS",
+    "PPX_EXECUTABLE_OPTS",
+    "PPX_MODULE_OPTS",
+)
+
+## Repo Options
+load("//bzl/ppx_optcomp:config.bzl", "PPX_OPTCOMP_OPTS")
+
+PKG_OPTS = GLOBAL_CLI_OPTS + PPX_OPTCOMP_OPTS + []
+LIB_1_OPTS = []
+LIB_1_ARCHIVE_OPTS = PKG_OPTS + LIB_1_OPTS + ARCHIVE_OPTS
+LIB_1_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + MODULE_OPTS
+LIB_1_NS_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + NS_MODULE_OPTS
+LIB_1_PPX_ARCHIVE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_ARCHIVE_OPTS
+LIB_1_PPX_EXECUTABLE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_EXECUTABLE_OPTS
+LIB_1_PPX_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_MODULE_OPTS
+LIB_1_DEPS = [
+    # do not sort (buildifier)
+    "@opam//pkg:compiler-libs.common",
+    "@opam//pkg:base",
+    "@opam//pkg:ppxlib",
+    "@opam//pkg:stdio",
 ]
 
-IMPL_OPTS = [
-    # "-verbose"
-]
-
-## ppx library: ppx_optcomp
-
-PPX_OPTCOMP_NS = "Ppx_optcomp"
-
-PPX_OPTCOMP_PPX = "//src/ppx:"
-
-ocaml_archive(
+################################################################
+## LIB 1
+################################################################
+ppx_archive(
     name = "ppx_optcomp",
-    opts = [
-        "-predicates",
-        "ppx_driver",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
+    opts = LIB_1_ARCHIVE_OPTS,
+    deps = LIB_1_DEPS + [
         # do not sort (buildifier)
-        "@opam//pkg:ppx_derivers",
-        ":ppx_optcomp_ns_module",
-        ":token.cm_",
-        ":cparser.cm_",
-        ":interpreter.cm_",
-        ":ppx_optcomp.cm_",
+        ":Cparser",
+        ":Interpreter",
+        ":Ppx_optcomp",
+        ":Token",
     ],
+    visibility = ["//visibility:public"]
 )
 
 ocaml_ns_module(
-    name = "ppx_optcomp_ns_module",
-    ns = PPX_OPTCOMP_NS,
+    name = "Ppx_optcomp_ns",
+    ns = "ppx_optcomp",
+    opts = LIB_1_NS_MODULE_OPTS,
     submodules = [
         # do not sort (buildifier)
         "cparser.ml",
-        "token.ml",
         "interpreter.ml",
         "ppx_optcomp.ml",
+        "token.ml",
     ],
 )
 
-ocaml_module(
-    name = "cparser.cm_",
+ppx_module(
+    name = "Cparser",
     src = "cparser.ml",
-    opts = IMPL_OPTS,
-    ns_module = ":ppx_optcomp_ns_module",
-    visibility = ["//visibility:public"],
-    deps = [
-        # do not sort (buildifier)
-        "@opam//pkg:compiler-libs.common",
-        "@opam//pkg:base",
-        "@opam//pkg:ppxlib",
-        "@opam//pkg:stdio",
-        ":token.cm_",
-    ],
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS + [":Token"]
 )
 
-ocaml_module(
-    name = "interpreter.cm_",
+ppx_module(
+    name = "Interpreter",
     src = "interpreter.ml",
-    opts = IMPL_OPTS,
-    ns_module = ":ppx_optcomp_ns_module",
-    visibility = ["//visibility:public"],
-    deps = [
-        # do not sort (buildifier)
-        "@opam//pkg:compiler-libs.common",
-        "@opam//pkg:base",
-        "@opam//pkg:ppxlib",
-        "@opam//pkg:stdio",
-    ],
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS
 )
 
-ocaml_module(
-    name = "token.cm_",
-    src = "token.ml",
-    opts = IMPL_OPTS,
-    ns_module = ":ppx_optcomp_ns_module",
-    visibility = ["//visibility:public"],
-    deps = [
-        # do not sort (buildifier)
-        "@opam//pkg:compiler-libs.common",
-        "@opam//pkg:base",
-        "@opam//pkg:ppxlib",
-        "@opam//pkg:stdio",
-    ],
-)
-
-ocaml_module(
-    name = "ppx_optcomp.cm_",
+ppx_module(
+    name = "Ppx_optcomp",
     src = "ppx_optcomp.ml",
-    opts = IMPL_OPTS,
-    ns_module = ":ppx_optcomp_ns_module",
-    visibility = ["//visibility:public"],
-    deps = [
-        # do not sort (buildifier)
-        "@opam//pkg:compiler-libs.common",
-        "@opam//pkg:base",
-        "@opam//pkg:ppxlib",
-        "@opam//pkg:stdio",
-        ":cparser.cm_",
-        ":interpreter.cm_",
-        ":token.cm_",
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS + [
+        ":Cparser",
+        ":Interpreter",
+        ":Token",
     ],
 )
 
+ppx_module(
+    name = "Token",
+    src = "token.ml",
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS
+)
