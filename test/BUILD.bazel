@@ -1,0 +1,59 @@
+load("@obazl_rules_ocaml//ocaml:rules.bzl",
+     "ppx_executable",
+     "ppx_test"
+)
+
+################################################################
+test_suite(
+    name     = "test",
+    tests    = [
+        ":import_relativity_test",
+        ":injection"
+    ]
+)
+
+################################################################
+ppx_test(
+    name     = "import_relativity_test",
+    src      = "import_relativity.ml",
+    ppx      = ":ppx",
+    expect   = {"expect/import_relativity.ml": "stdout",
+                  "expect/import_relativity.stderr": "stderr"},
+    data     = [
+        "import_relativity/entry.mlh",
+        "import_relativity/exit.mlh",
+        "import_relativity/nested/a.mlh",
+        "import_relativity/nested/b.mlh",
+    ],
+    timeout  = "short",
+)
+
+ppx_test(
+    name     = "injection",
+    src      = "injection.ml",
+    expect   = {"expect/injection.ml": "stdout"},
+    ppx      = ":ppx",
+    args     = [
+        # do not sort (buildifier)
+        "-inline-test-lib",
+        "ppx_optcomp"
+    ],
+     timeout = "short",
+)
+
+################################################################
+ppx_executable(
+    name     = "ppx",
+    srcs     = ["@obazl//ppxlib:driver_standalone_shim"],
+    opts     = [
+        "-linkall",
+        "-predicates",
+        "ppx_driver",
+    ],
+    deps     = [
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:ppx_inline_test",
+        "@opam//pkg:ppx_expect",
+        "//src:ppx_optcomp",
+    ]
+)

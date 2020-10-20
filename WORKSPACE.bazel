@@ -1,0 +1,20 @@
+workspace( name = "ppx_optcomp" )
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "obazl_rules_ocaml",
+    branch = "master",
+    remote = "https://github.com/obazl/rules_ocaml",
+)
+
+load("@obazl_rules_ocaml//ocaml:bootstrap.bzl",
+     "ocaml_configure",
+     "opam_configure",
+     "ocaml_register_toolchains")
+
+opam_configure()
+
+ocaml_configure()
+
+ocaml_register_toolchains(installation="host")

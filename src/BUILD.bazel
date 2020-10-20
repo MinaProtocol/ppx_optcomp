@@ -1,0 +1,105 @@
+load(
+    "@obazl_rules_ocaml//ocaml:rules.bzl",
+    "ocaml_archive",
+    "ocaml_module",
+    "ocaml_ns_module",
+    "ppx_archive",
+    "ppx_executable",
+    "ppx_module",
+)
+
+## Global Options
+load(
+    "//bzl:config.bzl",
+    "ARCHIVE_OPTS",
+    "GLOBAL_CLI_OPTS",
+    "MODULE_OPTS",
+    "NS_MODULE_OPTS",
+    "PPX_ARCHIVE_OPTS",
+    "PPX_EXECUTABLE_OPTS",
+    "PPX_MODULE_OPTS",
+)
+
+## Repo Options
+load("//bzl/ppx_optcomp:config.bzl", "PPX_OPTCOMP_OPTS")
+
+PKG_OPTS = GLOBAL_CLI_OPTS + PPX_OPTCOMP_OPTS + []
+LIB_1_OPTS = []
+LIB_1_ARCHIVE_OPTS = PKG_OPTS + LIB_1_OPTS + ARCHIVE_OPTS
+LIB_1_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + MODULE_OPTS
+LIB_1_NS_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + NS_MODULE_OPTS
+LIB_1_PPX_ARCHIVE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_ARCHIVE_OPTS
+LIB_1_PPX_EXECUTABLE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_EXECUTABLE_OPTS
+LIB_1_PPX_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_MODULE_OPTS
+LIB_1_DEPS = [
+    # do not sort (buildifier)
+    "@opam//pkg:compiler-libs.common",
+    "@opam//pkg:base",
+    "@opam//pkg:ppxlib",
+    "@opam//pkg:stdio",
+]
+
+################################################################
+## LIB 1
+################################################################
+ppx_archive(
+    name = "ppx_optcomp",
+    opts = LIB_1_ARCHIVE_OPTS,
+    deps = LIB_1_DEPS + [
+        # do not sort (buildifier)
+        ":Cparser",
+        ":Interpreter",
+        ":Ppx_optcomp",
+        ":Token",
+    ],
+    visibility = ["//visibility:public"]
+)
+
+ocaml_ns_module(
+    name = "Ppx_optcomp_ns",
+    ns = "ppx_optcomp",
+    opts = LIB_1_NS_MODULE_OPTS,
+    submodules = [
+        # do not sort (buildifier)
+        "cparser.ml",
+        "interpreter.ml",
+        "ppx_optcomp.ml",
+        "token.ml",
+    ],
+)
+
+ppx_module(
+    name = "Cparser",
+    src = "cparser.ml",
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS + [":Token"]
+)
+
+ppx_module(
+    name = "Interpreter",
+    src = "interpreter.ml",
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS
+)
+
+ppx_module(
+    name = "Ppx_optcomp",
+    src = "ppx_optcomp.ml",
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS + [
+        ":Cparser",
+        ":Interpreter",
+        ":Token",
+    ],
+)
+
+ppx_module(
+    name = "Token",
+    src = "token.ml",
+    ns_module = ":Ppx_optcomp_ns",
+    opts = LIB_1_MODULE_OPTS,
+    deps = LIB_1_DEPS
+)
