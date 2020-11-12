@@ -1,0 +1,202 @@
+## OBAZL GENERATED FILE ## To retain edits (prevent overwrite), delete this line.
+
+load(
+    "@obazl_rules_ocaml//ocaml:rules.bzl",
+    "ocaml_ns",
+    "ppx_archive",
+    "ppx_module",
+)
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load(
+    "//:BUILD.bzl",
+    "REPO_NS_MODULE_OPTS",
+    "REPO_PPX_ARCHIVE_OPTS",
+    "REPO_PPX_MODULE_OPTS",
+)
+load(
+    ":BUILD.bzl",
+    "PKG_NS_MODULE_OPTS",
+    "PKG_PPX_ARCHIVE_OPTS",
+    "PKG_PPX_MODULE_OPTS",
+)
+
+################################################################
+## STANZA 1: PPX_OPTCOMP
+################################################################
+PPX_OPTCOMP_PPX_MODULE_OPTS = REPO_PPX_MODULE_OPTS + PKG_PPX_MODULE_OPTS
+
+PPX_OPTCOMP_PPX_ARCHIVE_OPTS = REPO_PPX_ARCHIVE_OPTS + PKG_PPX_ARCHIVE_OPTS + []
+
+PPX_OPTCOMP_NS_MODULE_OPTS = REPO_NS_MODULE_OPTS + PKG_NS_MODULE_OPTS
+
+PPX_OPTCOMP_DEPS = [
+    # do not sort (buildifier)
+    "@opam//pkg:compiler-libs.common",
+    "@opam//pkg:base",
+    "@opam//pkg:ppxlib",
+    "@opam//pkg:stdio",
+]
+
+############
+ppx_archive(
+    name = "ppx_optcomp",
+    opts = PPX_OPTCOMP_PPX_ARCHIVE_OPTS,
+    visibility = ["//visibility:public"],
+    deps = PPX_OPTCOMP_DEPS + [
+        # do not sort (buildifier)
+        ":Cparser",
+        ":Interpreter",
+        ":Ppx_optcomp",
+        ":Token",
+    ],
+)
+
+#########
+ocaml_ns(
+    name = "Ppx_optcomp_ns",
+    ns = "ppx_optcomp",
+    opts = PPX_OPTCOMP_NS_MODULE_OPTS,
+    submodules = [
+        # do not sort (buildifier)
+        "cparser.ml",
+        "interpreter.ml",
+        "ppx_optcomp.ml",
+        "token.ml",
+    ],
+)
+
+###########
+ppx_module(
+    name = "Cparser",
+    src = "cparser.ml",
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+        "Token",
+    ],
+)
+
+###########
+ppx_module(
+    name = "Interpreter",
+    src = "interpreter.ml",
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+    ],
+)
+
+###########
+ppx_module(
+    name = "Ppx_optcomp",
+    src = "ppx_optcomp.ml",
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+        "Cparser",
+        "Interpreter",
+        "Token",
+    ],
+)
+
+###########
+ppx_module(
+    name = "Token",
+    src = "token.ml",
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+    ],
+)
+
+###################################################################
+######## Configuration Settings - see :BUILD.bzl #################
+bool_flag(
+    name = "always-link",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "enable_always_link",
+    flag_values = {":always-link": str(True)},
+)
+
+bool_flag(
+    name = "debug",
+    build_setting_default = True,
+)
+
+config_setting(
+    name = "enable_debug",
+    flag_values = {":debug": str(True)},
+)
+
+bool_flag(
+    name = "threads",
+    build_setting_default = True,
+)
+
+config_setting(
+    name = "enable_threads",
+    flag_values = {":threads": str(True)},
+)
+
+bool_flag(
+    name = "tooling",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "enable_tooling",
+    flag_values = {":tooling": str(True)},
+)
+
+bool_flag(
+    name = "verbose",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "enable_verbose",
+    flag_values = {":verbose": str(True)},
+)
+
+## PPX control
+string_flag(
+    name = "ppx-out",
+    build_setting_default = "binary",
+    values = [
+        "binary",
+        "text",
+    ],
+)
+
+config_setting(
+    name = "enable_ppx_output_format_text",
+    flag_values = {":ppx-out": "text"},
+)
+
+config_setting(
+    name = "enable_ppx_output_format_binary",
+    flag_values = {":ppx-out": "binary"},
+)

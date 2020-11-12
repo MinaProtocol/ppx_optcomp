@@ -1,0 +1,4 @@
+File "test/import_relativity/nested/../exit.mlh", line 1, characters 3-10::
+Warning Expected warning from exit.mlh
+File "test/import_relativity.ml", line 5, characters 3-10::
+Warning goodbye
