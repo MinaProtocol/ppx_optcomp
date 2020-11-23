@@ -178,3 +178,23 @@ And it provides the following functions:
 - conversion functions: `to_int`, `to_string`, `to_char`, `to_bool`
 - `defined`, `not_defined`: check whether a variable is defined
 - `show`: act as identity, but pretty-print a value to stderr
+
+Building
+--------
+
+Bazel:
+
+`$ bazel build src:ppx_optcomp`
+
+By default PPX executables are built in native mode. To build in bytecode mode:
+
+`$ bazel build src:ppx_optcomp --@ppx//mode=bytecode`
+
+To enable `-verbose` for all targets:
+
+`$ bazel build src:ppx_optcomp --@ppx//:verbose`
+
+Tests
+-----
+
+`$ bazel test test`

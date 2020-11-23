@@ -1,6 +1,6 @@
 build --color=yes
-# build --subcommands=pretty_print
 ## build --subcommands   ## no pretty print
+# build --subcommands=pretty_print
 # build --verbose_failures
 # build --sandbox_debug
 # build --show_timestamps
@@ -8,12 +8,8 @@ build --color=yes
 # build --jobs 600
 
 #### Config flags ####
-# build --//:verbose                 # enable verbose everywhere
-# build --//foo/bar:verbose          # enable verbose for pkg foo/bar
-# build --//:tooling                 # emit .cmt/.cmti files everywhere
-# build --//foo/bar:tooling          # emit .cmt/.cmti files for pkg foo/bar
-# build --//:ppx-print="text         # all ppx processing emits text instead of binary ast
-# build --//foo/bar:ppx-print="text  # ppx processing in pkg foo/bar emits text instead of binary ast
+# build --@ppx//mode=bytecode
+# build --@ppx//:verbose                 # enable verbose everywhere
 
 ## override external repos:
 # common --override_repository=obazl_rules_ocaml=/ABSOLUTE/PATH/TO/obazl_rules_ocaml
