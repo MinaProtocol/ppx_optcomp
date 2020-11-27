@@ -192,7 +192,10 @@ By default PPX executables are built in native mode. To build in bytecode mode:
 
 To enable `-verbose` for all targets:
 
-`$ bazel build src:ppx_optcomp --@ppx//:verbose`
+`$ bazel build src:ppx_optcomp --@ppx//verbose`
+
+To customize builds, copy `bzl/tools/user.bazelrc` to the root
+directory and edit. Do not put under version control.
 
 Tests
 -----
