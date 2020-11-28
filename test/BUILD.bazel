@@ -1,5 +1,6 @@
 load("@obazl_rules_ocaml//ocaml:rules.bzl",
      "ppx_executable",
+     "ppx_module",
      "ppx_test"
 )
 
@@ -41,19 +42,32 @@ ppx_test(
      timeout = "short",
 )
 
-################################################################
+###############
 ppx_executable(
     name     = "ppx",
-    srcs     = ["@obazl//ppxlib:driver_standalone_shim"],
-    opts     = [
-        "-linkall",
-        "-predicates",
-        "ppx_driver",
-    ],
+    main     = ":Driver",
     deps     = [
         "@opam//pkg:ppxlib",
         "@opam//pkg:ppx_inline_test",
         "@opam//pkg:ppx_expect",
         "//src:ppx_optcomp",
     ]
+)
+
+###########
+ppx_module(
+    name = "Driver",
+    src = ":ppxlib_driver.ml",
+    visibility = ["//visibility:public"],
+    deps = ["@opam//pkg:ppxlib"],
+)
+
+########
+genrule(
+    name = "gendriver",
+    outs = ["ppxlib_driver.ml"],
+    cmd = "\n".join([
+        "echo \"(* GENERATED FILE - DO NOT EDIT *)\" > \"$@\"",
+        "echo \"let () = Ppxlib.Driver.standalone ()\" >> \"$@\"",
+    ]),
 )

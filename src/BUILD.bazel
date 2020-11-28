@@ -1,37 +1,18 @@
+## OBAZL GENERATED FILE ## To retain edits (prevent overwrite), delete this line.
+
 load(
     "@obazl_rules_ocaml//ocaml:rules.bzl",
-    "ocaml_archive",
-    "ocaml_module",
-    "ocaml_ns_module",
     "ppx_archive",
-    "ppx_executable",
     "ppx_module",
+    "ppx_ns",
 )
 
-## Global Options
-load(
-    "//bzl:config.bzl",
-    "ARCHIVE_OPTS",
-    "GLOBAL_CLI_OPTS",
-    "MODULE_OPTS",
-    "NS_MODULE_OPTS",
-    "PPX_ARCHIVE_OPTS",
-    "PPX_EXECUTABLE_OPTS",
-    "PPX_MODULE_OPTS",
-)
+################################################################
+## PPX STANZA 1: PPX_OPTCOMP
+################################################################
+PPX_OPTCOMP_PPX_MODULE_OPTS = []
 
-## Repo Options
-load("//bzl/ppx_optcomp:config.bzl", "PPX_OPTCOMP_OPTS")
-
-PKG_OPTS = GLOBAL_CLI_OPTS + PPX_OPTCOMP_OPTS + []
-LIB_1_OPTS = []
-LIB_1_ARCHIVE_OPTS = PKG_OPTS + LIB_1_OPTS + ARCHIVE_OPTS
-LIB_1_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + MODULE_OPTS
-LIB_1_NS_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + NS_MODULE_OPTS
-LIB_1_PPX_ARCHIVE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_ARCHIVE_OPTS
-LIB_1_PPX_EXECUTABLE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_EXECUTABLE_OPTS
-LIB_1_PPX_MODULE_OPTS = PKG_OPTS + LIB_1_OPTS + PPX_MODULE_OPTS
-LIB_1_DEPS = [
+PPX_OPTCOMP_DEPS = [
     # do not sort (buildifier)
     "@opam//pkg:compiler-libs.common",
     "@opam//pkg:base",
@@ -39,26 +20,25 @@ LIB_1_DEPS = [
     "@opam//pkg:stdio",
 ]
 
-################################################################
-## LIB 1
-################################################################
+############
 ppx_archive(
     name = "ppx_optcomp",
-    opts = LIB_1_ARCHIVE_OPTS,
-    deps = LIB_1_DEPS + [
+    opts = [],
+    visibility = ["//visibility:public"],
+    deps = PPX_OPTCOMP_DEPS + [
         # do not sort (buildifier)
         ":Cparser",
         ":Interpreter",
         ":Ppx_optcomp",
         ":Token",
     ],
-    visibility = ["//visibility:public"]
 )
 
-ocaml_ns_module(
+#########
+ppx_ns(
     name = "Ppx_optcomp_ns",
     ns = "ppx_optcomp",
-    opts = LIB_1_NS_MODULE_OPTS,
+    opts = [],
     submodules = [
         # do not sort (buildifier)
         "cparser.ml",
@@ -68,38 +48,66 @@ ocaml_ns_module(
     ],
 )
 
+###########
 ppx_module(
     name = "Cparser",
     src = "cparser.ml",
-    ns_module = ":Ppx_optcomp_ns",
-    opts = LIB_1_MODULE_OPTS,
-    deps = LIB_1_DEPS + [":Token"]
-)
-
-ppx_module(
-    name = "Interpreter",
-    src = "interpreter.ml",
-    ns_module = ":Ppx_optcomp_ns",
-    opts = LIB_1_MODULE_OPTS,
-    deps = LIB_1_DEPS
-)
-
-ppx_module(
-    name = "Ppx_optcomp",
-    src = "ppx_optcomp.ml",
-    ns_module = ":Ppx_optcomp_ns",
-    opts = LIB_1_MODULE_OPTS,
-    deps = LIB_1_DEPS + [
-        ":Cparser",
-        ":Interpreter",
-        ":Token",
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+        "Token",
     ],
 )
 
+###########
+ppx_module(
+    name = "Interpreter",
+    src = "interpreter.ml",
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+    ],
+)
+
+###########
+ppx_module(
+    name = "Ppx_optcomp",
+    src = "ppx_optcomp.ml",
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+        "Cparser",
+        "Interpreter",
+        "Token",
+    ],
+)
+
+###########
 ppx_module(
     name = "Token",
     src = "token.ml",
-    ns_module = ":Ppx_optcomp_ns",
-    opts = LIB_1_MODULE_OPTS,
-    deps = LIB_1_DEPS
+    ns = ":Ppx_optcomp_ns",
+    opts = PPX_OPTCOMP_PPX_MODULE_OPTS,
+    deps = [
+        # do not sort (buildifier)
+        "@opam//pkg:compiler-libs.common",
+        "@opam//pkg:base",
+        "@opam//pkg:ppxlib",
+        "@opam//pkg:stdio",
+    ],
 )
