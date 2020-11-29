@@ -3,7 +3,7 @@ opam = struct(
     packages = {
         "base": "v0.12.0",
         "ocaml-compiler-libs": "v0.11.0",
-        "compiler-libs.common": "v0.11.0",
+        "compiler-libs.common": "[distributed with Ocaml]", # "v0.11.0",
         "ppx_expect": "v0.12.0",
         "ppx_expect.collector": "v0.12.0",
         "ppx_inline_test": "v0.12.0",
