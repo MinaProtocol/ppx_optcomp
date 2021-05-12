@@ -16,21 +16,21 @@ module Directive = struct
      compiler will make this faster than string equality. *)
   let of_string_opt s =
     match s with
-    | "optcomp.if"              | "if"              -> Some If
-    | "optcomp.else"            | "else"            -> Some Else
-    | "optcomp.elif"            | "elif"            -> Some Elif
-    | "optcomp.endif"           | "endif"           -> Some Endif
-    | "optcomp.ifdef"           | "ifdef"           -> Some Ifdef
-    | "optcomp.ifndef"          | "ifndef"          -> Some Ifndef
-    | "optcomp.define"          | "define"          -> Some Define
-    | "optcomp.undef"           | "undef"           -> Some Undef
-    | "optcomp.error"           | "error"           -> Some Error
-    | "optcomp.warning"         | "warning"         -> Some Warning
-    | "optcomp.import"          | "import"          -> Some Import
+    | "optcomp.if"              | "if"       -> Some If
+    | "optcomp.else"            | "else"     -> Some Else
+    | "optcomp.elif"            | "elif"     -> Some Elif
+    | "optcomp.endif"           | "endif"    -> Some Endif
+    | "optcomp.ifdef"           | "ifdef"    -> Some Ifdef
+    | "optcomp.ifndef"          | "ifndef"   -> Some Ifndef
+    | "optcomp.define"          | "define"   -> Some Define
+    | "optcomp.undef"           | "undef"    -> Some Undef
+    | "optcomp.error"                        -> Some Error
+    | "optcomp.warning"         | "warning"  -> Some Warning
+    | "optcomp.import"          | "import"   -> Some Import
     | "optcomp.import_absolute" | "import_absolute" -> Some Import_absolute
     | "optcomp.inject"          | "inject"          -> Some Inject
-    | "optcomp.elifdef"         | "elifdef"         -> Some Elifdef
-    | "optcomp.elifndef"        | "elifndef"        -> Some Elifndef
+    | "optcomp.elifdef"         | "elifdef"  -> Some Elifdef
+    | "optcomp.elifndef"        | "elifndef" -> Some Elifndef
     | _ -> None
 end
 
