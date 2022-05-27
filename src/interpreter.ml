@@ -47,21 +47,23 @@ module Value = struct
       (fun major minor patchlevel -> Tuple [Int major; Int minor; Int patchlevel])
   ;;
 
-  let ocaml_backend =
-    let be =
-      match Sys.backend_type with
-      | Native -> "native"
-      | Bytecode -> "bytecode"
-      | Other s -> s (* js_of_ocaml, for instance *)
-    in
-    String be
-  ;;
-
   let lift_string loc t =
     match t with
     | String str -> str
     | _          -> Location.raise_errorf ~loc "optcomp: got unexpected value where string was expected"
   ;;
+
+  let config_bool name =
+    Bool
+      (Ocaml_common.Config.config_var name
+       |> Option.map ~f:Bool.of_string
+       |> Option.value ~default:false)
+  ;;
+
+
+  let flambda_backend = config_bool "flambda_backend";;
+
+  let flambda2 = config_bool "flambda2";;
 
   let rec to_expression loc t =
     match t with
@@ -185,9 +187,13 @@ end = struct
         },
         Value.ocaml_version
       ; { loc = Location.none
-        ; txt = "ocaml_backend"
+        ; txt = "flambda_backend"
         },
-        Value.ocaml_backend
+        Value.flambda_backend
+      ; { loc = Location.none
+        ; txt = "flambda2"
+        },
+        Value.flambda2
       ]
   ;;
 
@@ -272,7 +278,7 @@ let rec eval env e : Value.t =
   match e.pexp_desc with
   | Pexp_constant (Pconst_integer    (x, None)) -> Int (parse_int loc x)
   | Pexp_constant (Pconst_char    x       ) -> Char x
-  | Pexp_constant (Pconst_string (x, _   )) -> String x
+  | Pexp_constant (Pconst_string (x, _, _   )) -> String x
 
   | Pexp_construct ({ txt = Lident "true" ; _ }, None) -> Bool true
   | Pexp_construct ({ txt = Lident "false"; _ }, None) -> Bool false
@@ -392,7 +398,7 @@ and bind env patt value =
 
   | Ppat_constant (Pconst_integer    (x, None)), Int    y when parse_int loc x = y -> env
   | Ppat_constant (Pconst_char    x       ), Char   y when Char.equal   x y -> env
-  | Ppat_constant (Pconst_string (x, _   )), String y when String.equal x y -> env
+  | Ppat_constant (Pconst_string (x, _, _   )), String y when String.equal x y -> env
 
   | Ppat_construct ({ txt = Lident "true" ; _ }, None), Bool true  -> env
   | Ppat_construct ({ txt = Lident "false"; _ }, None), Bool false -> env
