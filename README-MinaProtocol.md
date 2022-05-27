@@ -7,3 +7,4 @@ OCaml code, relative import locations, and support for compilation
 with Bazel.
 
 For OCaml 4.11.2, the Jane Street code at v0.13.0 was merged.
+For OCaml 4.14.0, the Jane Street code at v0.14.3 was merged.

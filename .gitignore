@@ -1,9 +1,3 @@
-.bazel
-bazel-*
-user.bazelrc
-.cpcache
-*.log
-
 _build
 setup.data
 setup.log
